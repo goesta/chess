@@ -1186,12 +1186,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Parse game state from URL
     function parseGameStateFromUrl() {
-        console.log("Parsing URL for game state");
         const urlParams = new URLSearchParams(window.location.search);
         const encodedState = urlParams.get('s') || urlParams.get('state'); // Support both formats
         const checksum = urlParams.get('c') || urlParams.get('checksum'); // Support both formats
         
-        console.log("URL parameters:", { encodedState, checksum });
         
         if (!encodedState || !checksum) {
             throw new Error('Missing state or checksum in URL');
@@ -1200,11 +1198,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Decode state - handle the URL-safe base64
             const stateString = atob(encodedState.replace(/-/g, '+').replace(/_/g, '/'));
-            console.log("Decoded state string:", stateString);
             
             // Verify checksum
             const calculatedChecksum = generateChecksum(stateString).substring(0, checksum.length);
-            console.log("Checksums:", { received: checksum, calculated: calculatedChecksum });
             
             if (calculatedChecksum !== checksum) {
                 throw new Error('Invalid checksum - state may have been tampered with');
