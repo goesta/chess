@@ -2,9 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Constants for chess pieces using Unicode characters
     const PIECES = {
         // White pieces (will use the same solid symbols as black but styled white with outline)
-        'wP': '♟', 'wR': '♜', 'wN': '♞', 'wB': '♝', 'wQ': '♛', 'wK': '♚',
+        'wP': '♟︎', 'wR': '♜', 'wN': '♞', 'wB': '♝', 'wQ': '♛', 'wK': '♚',
         // Black pieces (solid symbols)
-        'bP': '♟', 'bR': '♜', 'bN': '♞', 'bB': '♝', 'bQ': '♛', 'bK': '♚'
+        'bP': '♟︎', 'bR': '♜', 'bN': '♞', 'bB': '♝', 'bQ': '♛', 'bK': '♚'
     };
 
     // Initial state of the board (standard chess setup)

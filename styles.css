@@ -122,6 +122,7 @@ h1 {
     justify-content: center;
     align-items: center;
     font-size: 40px;
+    font-family: "Arial","DejaVu Sans", "FreeSerif", sans-serif;
 }
 
 /* White pieces with white color */
