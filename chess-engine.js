@@ -716,10 +716,6 @@ class ChessEngine {
         const whiteBishopColor = this.getSquareColor(whiteBishopSquare.row, whiteBishopSquare.col);
         const blackBishopColor = this.getSquareColor(blackBishopSquare.row, blackBishopSquare.col);
         
-        console.log('Bishop color check:', 
-                    'white bishop at', whiteBishopSquare, 'is on', whiteBishopColor, 
-                    'black bishop at', blackBishopSquare, 'is on', blackBishopColor);
-        
         // If bishops are on the same colored squares, it's a draw
         return whiteBishopColor === blackBishopColor;
     }
@@ -1080,6 +1076,43 @@ class ChessEngine {
         }
         return null; // King not found - handled by calling code
     }
+
+    printBoard() {
+        let board = '\n';
+        board += '     a    b    c    d    e    f    g    h\n';
+        board += '  +---------------------------------------+';
+        for (let r = 7; r >= 0; r--) {
+            board += `\n${r + 1} | ${this.board[r].map(cell => cell ? cell: '  ').join(' | ')} | ${r + 1}`;
+            board += '\n  +---------------------------------------+';
+        }
+        board += '\n    a    b    c    d    e    f    g    h';
+        console.log(board);
+    }
+
+    printBoardCompact() {
+        const symbols = {
+            wP: '♙', wR: '♖', wN: '♘', wB: '♗', wQ: '♕', wK: '♔',
+            bP: '♟', bR: '♜', bN: '♞', bB: '♝', bQ: '♛', bK: '♚'
+        };
+        let board = '\n';
+        board += '  a b c d e f g h\n';
+        for (let row = 0; row < 8; row++) {
+            let rowStr = `${8-row} `;
+            for (let col = 0; col < 8; col++) {
+                const piece = this.board[row][col];
+                if (piece) {
+                    rowStr += symbols[piece] + ' ';
+                } else {
+                    rowStr += '. ';
+                }
+            }
+            rowStr += `${8-row}`;
+            board += rowStr + '\n';
+        }
+        board += '  a b c d e f g h';
+        console.log(board);
+    } 
+    
 }
 
 // Export for tests
