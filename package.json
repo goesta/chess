@@ -1,0 +1,23 @@
+{
+  "name": "chess",
+  "version": "1.0.0",
+  "description": "Another AI experiment. I had the idea of a simple serverless chess game. This is what claude and i came up with.",
+  "main": "chess.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/goesta/chess.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/goesta/chess/issues"
+  },
+  "homepage": "https://github.com/goesta/chess#readme",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
