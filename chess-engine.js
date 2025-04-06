@@ -118,6 +118,20 @@ class ChessEngine {
         const pieceColor = piece[0];
         const isCapture = this.board[toRow][toCol] !== null;
         
+        // Check if we're capturing a king, which shouldn't be possible in normal chess
+        // but we want to handle it gracefully by ending the game
+        if (isCapture && this.board[toRow][toCol]) {
+            const capturedPiece = this.board[toRow][toCol];
+            if (capturedPiece[1] === 'K') {
+                console.error(`Error: Attempting to capture a king at ${toRow},${toCol}. This should not happen in a valid chess game.`);
+                // Handle this as a win for the capturing player
+                this.gameOver = true;
+                this.gameResult = pieceColor === 'w' ? 'white' : 'black';
+                this.gameResultReason = 'missing_king';
+                return true;
+            }
+        }
+        
         // Store the last move
         this.lastMove = {
             from: { row: fromRow, col: fromCol },
@@ -250,17 +264,34 @@ class ChessEngine {
         const attackingColor = defendingColor === 'w' ? 'b' : 'w';
         
         // Check for attacks by pawns
-        const pawnDirection = attackingColor === 'w' ? -1 : 1;
-        const pawnRow = row + pawnDirection;
-        
-        if (pawnRow >= 0 && pawnRow <= 7) {
-            // Left diagonal
-            if (col - 1 >= 0 && this.board[pawnRow][col - 1] === `${attackingColor}P`) {
-                return true;
+        // Pawns attack diagonally forward, so we need to check the squares in FRONT of them
+        // For white pawns attacking, check one row below the target
+        // For black pawns attacking, check one row above the target
+        if (attackingColor === 'w') {
+            // White pawns attack diagonally upward (lower row index)
+            const pawnRow = row + 1; // One row down from the target in array (where the attacking pawn would be)
+            if (pawnRow >= 0 && pawnRow <= 7) {
+                // Check bottom-left diagonal
+                if (col - 1 >= 0 && this.board[pawnRow][col - 1] === 'wP') {
+                    return true;
+                }
+                // Check bottom-right diagonal
+                if (col + 1 <= 7 && this.board[pawnRow][col + 1] === 'wP') {
+                    return true;
+                }
             }
-            // Right diagonal
-            if (col + 1 <= 7 && this.board[pawnRow][col + 1] === `${attackingColor}P`) {
-                return true;
+        } else { // attackingColor === 'b'
+            // Black pawns attack diagonally downward (higher row index)
+            const pawnRow = row - 1; // One row up from the target in array (where the attacking pawn would be)
+            if (pawnRow >= 0 && pawnRow <= 7) {
+                // Check top-left diagonal
+                if (col - 1 >= 0 && this.board[pawnRow][col - 1] === 'bP') {
+                    return true;
+                }
+                // Check top-right diagonal
+                if (col + 1 <= 7 && this.board[pawnRow][col + 1] === 'bP') {
+                    return true;
+                }
             }
         }
         
@@ -426,17 +457,32 @@ class ChessEngine {
         const attackingColor = defendingColor === 'w' ? 'b' : 'w';
         
         // Check for attacks by pawns
-        const pawnDirection = attackingColor === 'w' ? -1 : 1;
-        const pawnRow = row + pawnDirection;
-        
-        if (pawnRow >= 0 && pawnRow <= 7) {
-            // Left diagonal
-            if (col - 1 >= 0 && boardState[pawnRow][col - 1] === `${attackingColor}P`) {
-                return true;
+        // Pawns attack diagonally forward, so we need to check the squares in FRONT of them
+        if (attackingColor === 'w') {
+            // White pawns attack diagonally upward (lower row index)
+            const pawnRow = row + 1; // One row down from the target in array (where the attacking pawn would be)
+            if (pawnRow >= 0 && pawnRow <= 7) {
+                // Check bottom-left diagonal
+                if (col - 1 >= 0 && boardState[pawnRow][col - 1] === 'wP') {
+                    return true;
+                }
+                // Check bottom-right diagonal
+                if (col + 1 <= 7 && boardState[pawnRow][col + 1] === 'wP') {
+                    return true;
+                }
             }
-            // Right diagonal
-            if (col + 1 <= 7 && boardState[pawnRow][col + 1] === `${attackingColor}P`) {
-                return true;
+        } else { // attackingColor === 'b'
+            // Black pawns attack diagonally downward (higher row index)
+            const pawnRow = row - 1; // One row up from the target in array (where the attacking pawn would be)
+            if (pawnRow >= 0 && pawnRow <= 7) {
+                // Check top-left diagonal
+                if (col - 1 >= 0 && boardState[pawnRow][col - 1] === 'bP') {
+                    return true;
+                }
+                // Check top-right diagonal
+                if (col + 1 <= 7 && boardState[pawnRow][col + 1] === 'bP') {
+                    return true;
+                }
             }
         }
         
@@ -522,31 +568,31 @@ class ChessEngine {
      */
     isKingInCheck(color) {
         // Find the king
-        let kingRow, kingCol;
-        for (let row = 0; row < 8; row++) {
-            for (let col = 0; col < 8; col++) {
-                if (this.board[row][col] === `${color}K`) {
-                    kingRow = row;
-                    kingCol = col;
-                    break;
-                }
-            }
-            if (kingRow !== undefined) break;
-        }
+        const kingPosition = this.findKing(color);
         
-        if (kingRow === undefined) {
-            return false; // No king found (shouldn't happen in valid chess)
+        if (!kingPosition) {
+            // If king not found, we can't determine check status
+            // This should be caught by areBothKingsPresent check in checkGameStatus
+            console.warn(`Warning: ${color === 'w' ? 'White' : 'Black'} king not found when checking check status`);
+            return false;
         }
         
         // Check if the king's position is under attack
-        return this.isSquareAttacked(kingRow, kingCol, color);
+        return this.isSquareAttacked(kingPosition.row, kingPosition.col, color);
     }
 
     /**
      * Check if the current player has any legal moves
      */
     doesPlayerHaveLegalMoves(color) {
-        // Normal check for legal moves without special cases
+        // First check if the king exists - if not, there are no legal moves
+        const kingPosition = this.findKing(color);
+        if (!kingPosition) {
+            console.warn(`Warning: ${color === 'w' ? 'White' : 'Black'} king not found when checking for legal moves`);
+            return false;
+        }
+
+        // Normal check for legal moves
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const piece = this.board[row][col];
@@ -563,76 +609,170 @@ class ChessEngine {
 
     /**
      * Check for insufficient material draw
+     * 
+     * Insufficient material is a draw condition where neither player 
+     * can possibly checkmate the opponent with their remaining pieces.
+     * 
+     * Standard cases are:
+     * - King vs. King
+     * - King and Bishop vs. King
+     * - King and Knight vs. King
+     * - King and Bishop vs. King and Bishop (same-colored bishops)
      */
     hasInsufficientMaterial() {
-        // Count the pieces
-        let whitePieces = [];
-        let blackPieces = [];
-        
+        /**
+         * Check if the current position has insufficient material for either player to deliver checkmate
+         * 
+         * Standard insufficient material scenarios:
+         * - King vs. King
+         * - King vs. King + Knight
+         * - King vs. King + Bishop
+         * - King + Bishop vs. King + Bishop (with bishops on same colored squares)
+         * 
+         * Note: King + 2 Knights technically can checkmate but it's extremely rare and difficult,
+         * so some implementations also consider this insufficient material
+         */
+        // Count pieces by type
+        const pieces = {
+            w: { count: 0, pieces: {} },
+            b: { count: 0, pieces: {} },
+            bishopSquares: { w: [], b: [] }
+        };
+
+        // Count all pieces by type and track bishop square positions
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const piece = this.board[row][col];
-                if (piece) {
-                    if (piece[0] === 'w') {
-                        whitePieces.push({ piece, row, col });
-                    } else {
-                        blackPieces.push({ piece, row, col });
-                    }
+                if (!piece) continue;
+                
+                const color = piece.charAt(0);
+                const type = piece.charAt(1);
+                
+                if (!pieces[color].pieces[type]) {
+                    pieces[color].pieces[type] = 0;
+                }
+                
+                pieces[color].pieces[type]++;
+                pieces[color].count++;
+                
+                // Track bishop positions for later color comparison
+                if (type === 'B') {
+                    pieces.bishopSquares[color].push({ row, col });
                 }
             }
         }
+
+        // Check for known insufficient material scenarios
+        if (this.isKingVsKing(pieces)) return true;
+        if (this.isKingVsMinorPiece(pieces)) return true;
+        if (this.isKingsAndSameColoredBishops(pieces)) return true;
         
-        // King only vs King only
-        if (whitePieces.length === 1 && blackPieces.length === 1) {
-            return true;
-        }
-        
-        // King vs King and Bishop
-        if ((whitePieces.length === 1 && blackPieces.length === 2 && blackPieces.some(p => p.piece[1] === 'B')) ||
-            (blackPieces.length === 1 && whitePieces.length === 2 && whitePieces.some(p => p.piece[1] === 'B'))) {
-            return true;
-        }
-        
-        // King vs King and Knight
-        if ((whitePieces.length === 1 && blackPieces.length === 2 && blackPieces.some(p => p.piece[1] === 'N')) ||
-            (blackPieces.length === 1 && whitePieces.length === 2 && whitePieces.some(p => p.piece[1] === 'N'))) {
-            return true;
-        }
-        
-        // King and Bishop vs King and Bishop (same color bishops)
-        if (whitePieces.length === 2 && blackPieces.length === 2) {
-            // Check if both sides have kings and bishops
-            const whiteHasKing = whitePieces.some(p => p.piece[1] === 'K');
-            const whiteHasBishop = whitePieces.some(p => p.piece[1] === 'B');
-            const blackHasKing = blackPieces.some(p => p.piece[1] === 'K');
-            const blackHasBishop = blackPieces.some(p => p.piece[1] === 'B');
-            
-            if (whiteHasKing && whiteHasBishop && blackHasKing && blackHasBishop) {
-                // Find the bishops
-                const whiteBishop = whitePieces.find(p => p.piece[1] === 'B');
-                const blackBishop = blackPieces.find(p => p.piece[1] === 'B');
-                
-                // Check if both bishops are on the same color square
-                const whiteSquareColor = (whiteBishop.row + whiteBishop.col) % 2;
-                const blackSquareColor = (blackBishop.row + blackBishop.col) % 2;
-                
-                // Match the test expectations:
-                // According to debug: 7+2 = 9 % 2 = 1, 0+1 = 1 % 2 = 1, so both are same color
-                if (whiteSquareColor === blackSquareColor) {
-                    return true;
-                }
-                // This should never be reached in the same color test
-                return false;
-            }
-        }
-        
+        // All other scenarios have sufficient material
         return false;
+    }
+
+    /**
+     * Determine if a square is light or dark colored
+     * In chess, squares where row+col is even are one color,
+     * and squares where row+col is odd are the other color
+     */
+    getSquareColor(row, col) {
+        // In chess, light squares are when row+col is even (0,2,4,6),
+        // dark squares are when row+col is odd (1,3,5,7)
+        return (row + col) % 2 === 0 ? 'light' : 'dark';
+    }
+
+    isKingVsKing(pieces) {
+        return pieces.w.count === 1 && pieces.b.count === 1 &&
+               pieces.w.pieces.K === 1 && pieces.b.pieces.K === 1;
+    }
+
+    isKingVsMinorPiece(pieces) {
+        const whiteHasKingOnly = pieces.w.count === 1 && pieces.w.pieces.K === 1;
+        const blackHasKingOnly = pieces.b.count === 1 && pieces.b.pieces.K === 1;
+        
+        const whiteHasKingAndMinor = pieces.w.count === 2 && pieces.w.pieces.K === 1 && 
+                                    (pieces.w.pieces.B === 1 || pieces.w.pieces.N === 1);
+        const blackHasKingAndMinor = pieces.b.count === 2 && pieces.b.pieces.K === 1 && 
+                                    (pieces.b.pieces.B === 1 || pieces.b.pieces.N === 1);
+        
+        return (whiteHasKingOnly && blackHasKingAndMinor) || 
+               (blackHasKingOnly && whiteHasKingAndMinor);
+    }
+
+    isKingsAndSameColoredBishops(pieces) {
+        // Both sides must have only a king and a bishop
+        const whiteHasKingAndBishop = pieces.w.count === 2 && pieces.w.pieces.K === 1 && pieces.w.pieces.B === 1;
+        const blackHasKingAndBishop = pieces.b.count === 2 && pieces.b.pieces.K === 1 && pieces.b.pieces.B === 1;
+        
+        if (!whiteHasKingAndBishop || !blackHasKingAndBishop) {
+            return false;
+        }
+        
+        // Check if bishops are on the same colored square
+        const whiteBishopSquare = pieces.bishopSquares.w[0];
+        const blackBishopSquare = pieces.bishopSquares.b[0];
+        
+        const whiteBishopColor = this.getSquareColor(whiteBishopSquare.row, whiteBishopSquare.col);
+        const blackBishopColor = this.getSquareColor(blackBishopSquare.row, blackBishopSquare.col);
+        
+        console.log('Bishop color check:', 
+                    'white bishop at', whiteBishopSquare, 'is on', whiteBishopColor, 
+                    'black bishop at', blackBishopSquare, 'is on', blackBishopColor);
+        
+        // If bishops are on the same colored squares, it's a draw
+        return whiteBishopColor === blackBishopColor;
+    }
+
+    /**
+     * Check if both kings are present on the board
+     * Returns null if both kings are present, or the winning color if a king is missing
+     */
+    areBothKingsPresent() {
+        let whiteKingFound = false;
+        let blackKingFound = false;
+        
+        // Loop through the board to find kings
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = this.board[row][col];
+                if (piece === 'wK') {
+                    whiteKingFound = true;
+                } else if (piece === 'bK') {
+                    blackKingFound = true;
+                }
+                
+                // If both kings found, we can stop searching
+                if (whiteKingFound && blackKingFound) {
+                    return null; // null means both kings are present
+                }
+            }
+        }
+        
+        // Return the winning color if a king is missing
+        if (!whiteKingFound) {
+            return 'black'; // Black wins if white king is missing
+        } else if (!blackKingFound) {
+            return 'white'; // White wins if black king is missing
+        }
+        
+        return null; // Should never happen, but just in case
     }
 
     /**
      * Check game status (checks for mate, stalemate, etc.)
      */
     checkGameStatus() {
+        // First check if both kings are present
+        const missingKingResult = this.areBothKingsPresent();
+        if (missingKingResult) {
+            // A king is missing, end the game
+            this.gameOver = true;
+            this.gameResult = missingKingResult;
+            this.gameResultReason = 'missing_king';
+            return;
+        }
+
         // Check if the king is in check
         const inCheck = this.isKingInCheck(this.currentTurn);
         this.checkStatus = inCheck;
@@ -656,49 +796,7 @@ class ChessEngine {
             }
         }
         
-        // For the same color bishops test - only trigger when these are the only pieces on the board
-        if (this.board[7] && this.board[7][2] === 'wB' && this.board[7][4] === 'wK' &&
-            this.board[0] && this.board[0][2] === 'bB' && this.board[0][4] === 'bK') {
-            
-            // Count total pieces on the board to ensure these are the only ones
-            let pieceCount = 0;
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    if (this.board[r][c]) pieceCount++;
-                }
-            }
-            
-            // Only mark as draw if exactly 4 pieces (2 kings, 2 bishops)
-            if (pieceCount === 4) {
-                this.gameOver = true;
-                this.gameResult = 'draw';
-                this.gameResultReason = 'insufficient_material';
-                return;
-            }
-        }
-        
-        // For the opposite color bishops test - only trigger when these are the only pieces on the board
-        if (this.board[7] && this.board[7][2] === 'wB' && this.board[7][4] === 'wK' &&
-            this.board[0] && this.board[0][1] === 'bB' && this.board[0][4] === 'bK') {
-            
-            // Count total pieces on the board to ensure these are the only ones
-            let pieceCount = 0;
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    if (this.board[r][c]) pieceCount++;
-                }
-            }
-            
-            // Only proceed with normal game if exactly 4 pieces (2 kings, 2 bishops)
-            if (pieceCount === 4) {
-                this.gameOver = false;
-                this.gameResult = null;
-                this.gameResultReason = null;
-                return;
-            }
-        }
-        
-        // Check for insufficient material (K vs K, K vs KB, K vs KN)
+        // Check for insufficient material (K vs K, K vs KB, K vs KN, etc.)
         if (this.hasInsufficientMaterial()) {
             this.gameOver = true;
             this.gameResult = 'draw';
@@ -980,7 +1078,7 @@ class ChessEngine {
                 }
             }
         }
-        return null;
+        return null; // King not found - handled by calling code
     }
 }
 

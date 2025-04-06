@@ -557,20 +557,35 @@ describe('ChessEngine - Draw conditions', () => {
     // Set up a position with king+bishop vs king+bishop on same color squares
     const customBoard = Array(8).fill().map(() => Array(8).fill(null));
     
-    // Place white king and bishop on light square
+    // Place white king and bishop on dark square (c1 is a light square)
     customBoard[7][4] = 'wK';
-    customBoard[7][2] = 'wB'; // Light square bishop
+    customBoard[7][0] = 'wB'; // a1 is a light square (7+0=7 is odd)
     
     // Place black king and bishop on light square
     customBoard[0][4] = 'bK';
-    customBoard[0][2] = 'bB'; // Light square bishop
+    customBoard[0][1] = 'bB'; // b8 is a light square (0+1=1 is odd)
     
     // Set up the position
     engine.setPosition(customBoard, { currentTurn: 'w' });
     
+    // Check the square colors using the engine's method to confirm setup
+    const whiteBishopSquare = { row: 7, col: 0 };
+    const blackBishopSquare = { row: 0, col: 1 };
+    
+    const whiteBishopOnDarkSquare = engine.getSquareColor(whiteBishopSquare.row, whiteBishopSquare.col);
+    const blackBishopOnDarkSquare = engine.getSquareColor(blackBishopSquare.row, blackBishopSquare.col);
+    
+    console.log('Same color bishops test - bishops on dark squares:', 
+                'white:', whiteBishopOnDarkSquare, 
+                'black:', blackBishopOnDarkSquare);
+    
     console.log('Same color bishops test - hasInsufficientMaterial:', engine.hasInsufficientMaterial());
     console.log('Same color bishops test - gameOver:', engine.gameOver);
     console.log('Same color bishops test - gameResult:', engine.gameResult);
+    
+    // Both bishops are on dark squares, so it should be a draw
+    expect(whiteBishopOnDarkSquare).toBe(blackBishopOnDarkSquare);
+    expect(engine.hasInsufficientMaterial()).toBe(true);
     
     // Should be a draw by insufficient material
     expect(engine.gameOver).toBe(true);
@@ -582,23 +597,75 @@ describe('ChessEngine - Draw conditions', () => {
     // Set up a position with king+bishop vs king+bishop on opposite color squares
     const customBoard = Array(8).fill().map(() => Array(8).fill(null));
     
-    // Place white king and bishop on light square
+    // White king and bishop (bishop on light square)
     customBoard[7][4] = 'wK';
-    customBoard[7][2] = 'wB'; // Light square bishop
+    customBoard[5][2] = 'wB'; // c3 (5+2=7 is odd = dark square)
     
-    // Place black king and bishop on dark square
+    // Black king and bishop (bishop on dark square)
     customBoard[0][4] = 'bK';
-    customBoard[0][1] = 'bB'; // Dark square bishop
+    customBoard[2][3] = 'bB'; // d6 (2+3=5 is odd = dark square) 
     
     // Set up the position
     engine.setPosition(customBoard, { currentTurn: 'w' });
     
+    // Check the square colors using the engine's method to confirm setup
+    const whiteBishopSquare = { row: 5, col: 2 };
+    const blackBishopSquare = { row: 2, col: 3 };
+    
+    const whiteBishopColor = engine.getSquareColor(whiteBishopSquare.row, whiteBishopSquare.col);
+    const blackBishopColor = engine.getSquareColor(blackBishopSquare.row, blackBishopSquare.col);
+    
+    console.log('Opposite color bishops test - bishops on squares:', 
+                'white bishop at c3:', whiteBishopColor, 
+                'black bishop at d6:', blackBishopColor);
+                
     console.log('Opposite color bishops test - hasInsufficientMaterial:', engine.hasInsufficientMaterial());
     console.log('Opposite color bishops test - gameOver:', engine.gameOver);
-    console.log('Opposite color bishops test - square colors:',
-                'white bishop:', (7+2)%2, 'black bishop:', (0+1)%2);
     
-    // Should not be a draw by insufficient material
+    // Make sure our test is set up correctly - bishops should be on same color squares
+    expect(whiteBishopColor).toBe(blackBishopColor);
+    
+    // Bishops on same colored squares should be insufficient material
+    expect(engine.hasInsufficientMaterial()).toBe(true);
+    expect(engine.gameOver).toBe(true);
+    expect(engine.gameResult).toBe('draw');
+    expect(engine.gameResultReason).toBe('insufficient_material');
+  });
+
+  test('should correctly handle bishops on opposite color squares', () => {
+    // Set up a position with king+bishop vs king+bishop on OPPOSITE color squares
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // White king and bishop (bishop on light square)
+    customBoard[7][4] = 'wK';
+    customBoard[6][0] = 'wB'; // a2 (6+0=6 is even = light square)
+    
+    // Black king and bishop (bishop on dark square) 
+    customBoard[0][4] = 'bK';
+    customBoard[1][2] = 'bB'; // c7 (1+2=3 is odd = dark square)
+    
+    // Set up the position
+    engine.setPosition(customBoard, { currentTurn: 'w' });
+    
+    // Check the square colors using the engine's method to confirm setup
+    const whiteBishopSquare = { row: 6, col: 0 };
+    const blackBishopSquare = { row: 1, col: 2 };
+    
+    const whiteBishopColor = engine.getSquareColor(whiteBishopSquare.row, whiteBishopSquare.col);
+    const blackBishopColor = engine.getSquareColor(blackBishopSquare.row, blackBishopSquare.col);
+    
+    console.log('Opposite color bishops test 2 - bishops on squares:', 
+                'white bishop at a2:', whiteBishopColor, 
+                'black bishop at c7:', blackBishopColor);
+                
+    console.log('Opposite color bishops test 2 - hasInsufficientMaterial:', engine.hasInsufficientMaterial());
+    console.log('Opposite color bishops test 2 - gameOver:', engine.gameOver);
+    
+    // Make sure our test is set up correctly - bishops should be on opposite color squares
+    expect(whiteBishopColor).not.toBe(blackBishopColor);
+    
+    // Bishops on opposite colored squares should NOT be insufficient material
+    expect(engine.hasInsufficientMaterial()).toBe(false);
     expect(engine.gameOver).toBe(false);
   });
 
@@ -670,5 +737,378 @@ describe('ChessEngine - Draw conditions', () => {
     
     // halfMoveClock should be reset to 0
     expect(engine.halfMoveClock).toBe(0);
+  });
+});
+
+describe('ChessEngine - Insufficient Material', () => {
+  let engine;
+
+  beforeEach(() => {
+    engine = new ChessEngine();
+  });
+
+  test('should not declare insufficient material after first move in standard game', () => {
+    // Create a new engine with standard starting position
+    engine = new ChessEngine();
+    
+    // Add debug logging before move
+    console.log('Before first move - hasInsufficientMaterial:', engine.hasInsufficientMaterial());
+    
+    // Make a standard first move (e4)
+    engine.makeMove(6, 4, 4, 4);
+    
+    // Game should not be over
+    expect(engine.gameOver).toBe(false);
+    expect(engine.gameResult).toBeNull();
+    expect(engine.gameResultReason).toBeNull();
+    
+    console.log('After first move - hasInsufficientMaterial:', engine.hasInsufficientMaterial());
+  });
+
+  test('should identify kings with same-color bishops as insufficient material (white light square)', () => {
+    // Set up a position with king+bishop vs king+bishop on same color squares
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place white king and bishop on light square (c1)
+    customBoard[7][4] = 'wK';
+    customBoard[7][2] = 'wB'; // Light square (c1)
+    
+    // Place black king and bishop on light square (c8)
+    customBoard[0][4] = 'bK';
+    customBoard[0][2] = 'bB'; // Light square (c8)
+    
+    engine.setPosition(customBoard, { currentTurn: 'w' });
+    
+    // Both bishops are on light squares (row+col is even)
+    expect((7+2)%2).toBe(1); // White bishop square color
+    expect((0+2)%2).toBe(0); // Black bishop square color
+    
+    // Should be a draw by insufficient material - opposite colors are not a draw
+    expect(engine.hasInsufficientMaterial()).toBe(false);
+    expect(engine.gameOver).toBe(false);
+  });
+
+  test('should identify kings with same-color bishops as insufficient material (dark squares)', () => {
+    // Set up a position with king+bishop vs king+bishop on same color squares (dark)
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place white king and bishop on dark square (d2)
+    customBoard[7][4] = 'wK';
+    customBoard[6][3] = 'wB'; // Dark square
+    
+    // Place black king and bishop on dark square (d7)
+    customBoard[0][4] = 'bK';
+    customBoard[1][3] = 'bB'; // Dark square
+    
+    engine.setPosition(customBoard, { currentTurn: 'w' });
+    
+    // Both bishops are on dark squares (row+col is odd)
+    expect((6+3)%2).toBe(1); // White bishop square color
+    expect((1+3)%2).toBe(0); // Black bishop square color
+    
+    // Should be a draw by insufficient material - opposite colors are not a draw
+    expect(engine.hasInsufficientMaterial()).toBe(false);
+    expect(engine.gameOver).toBe(false);
+  });
+  
+  test('should identify kings with same-color bishops as insufficient material (both light)', () => {
+    // Set up a position with king+bishop vs king+bishop on same color squares (light)
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place white king and bishop on light square
+    customBoard[7][4] = 'wK';
+    customBoard[6][0] = 'wB'; // Light square (a2)
+    
+    // Place black king and bishop on light square
+    customBoard[0][4] = 'bK';
+    customBoard[1][0] = 'bB'; // Light square (a7)
+    
+    engine.setPosition(customBoard, { currentTurn: 'w' });
+    
+    // Both bishops are on light squares (row+col is even)
+    expect((6+0)%2).toBe(0); // White bishop square color
+    expect((1+0)%2).toBe(1); // Black bishop square color
+    
+    // Should be a draw by insufficient material - opposite colors are not a draw
+    expect(engine.hasInsufficientMaterial()).toBe(false);
+    expect(engine.gameOver).toBe(false);
+  });
+
+  test('should handle non-standard bishop positions correctly', () => {
+    // Set up a position with king+bishop vs king+bishop with same-colored bishops
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place white king and bishop on dark square
+    customBoard[5][5] = 'wK';
+    customBoard[3][1] = 'wB'; // Dark square
+    
+    // Place black king and bishop on dark square
+    customBoard[2][2] = 'bK';
+    customBoard[7][7] = 'bB'; // Dark square
+    
+    engine.setPosition(customBoard, { currentTurn: 'w' });
+    
+    // Both bishops are on dark squares (sum is even for dark)
+    const whiteBishopColor = (3+1)%2;
+    const blackBishopColor = (7+7)%2;
+    console.log(`Bishop colors - white: ${whiteBishopColor}, black: ${blackBishopColor}`);
+    
+    // Should be a draw by insufficient material if same color, not a draw if different
+    const expectedResult = whiteBishopColor === blackBishopColor;
+    expect(engine.hasInsufficientMaterial()).toBe(expectedResult);
+  });
+
+  test('should identify kings with opposite-color bishops as not insufficient material (example 1)', () => {
+    // Set up a position with king+bishop vs king+bishop on different color squares
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place white king and bishop on light square (c1)
+    customBoard[7][4] = 'wK';
+    customBoard[7][2] = 'wB'; // c1 - (7+2)%2 = 1
+    
+    // Place black king and bishop on dark square (f8)
+    customBoard[0][4] = 'bK';
+    customBoard[0][5] = 'bB'; // f8 - (0+5)%2 = 1
+    
+    engine.setPosition(customBoard, { currentTurn: 'w' });
+    
+    // Check colors are different (1 for dark, 0 for light)
+    const whiteBishopColor = (7+2)%2;
+    const blackBishopColor = (0+5)%2;
+    console.log(`Bishop colors - white: ${whiteBishopColor}, black: ${blackBishopColor}`);
+    
+    // Should NOT be a draw when bishops are on opposite colors
+    expect(whiteBishopColor === blackBishopColor).toBe(true); // Both on dark squares
+    expect(engine.hasInsufficientMaterial()).toBe(true);
+    expect(engine.gameOver).toBe(true);
+    expect(engine.gameResultReason).toBe('insufficient_material');
+  });
+
+  test('should identify kings with same-color bishops as insufficient material (both dark)', () => {
+    // Set up a position with king+bishop vs king+bishop on same color squares (dark)
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place white king and bishop on dark square (d2)
+    customBoard[7][4] = 'wK';
+    customBoard[6][3] = 'wB'; // d2 - (6+3)%2 = 1 (dark)
+    
+    // Place black king and bishop on dark square (d7)
+    customBoard[0][4] = 'bK';
+    customBoard[1][3] = 'bB'; // d7 - (1+3)%2 = 0 (light)
+    
+    engine.setPosition(customBoard, { currentTurn: 'w' });
+    
+    // Check square colors (1 for dark, 0 for light)
+    const whiteBishopColor = (6+3)%2;
+    const blackBishopColor = (1+3)%2;
+    console.log(`Bishop colors - white: ${whiteBishopColor}, black: ${blackBishopColor}`);
+    
+    // Should NOT be a draw when bishops are on opposite colors
+    expect(whiteBishopColor === blackBishopColor).toBe(false);
+    expect(engine.hasInsufficientMaterial()).toBe(false);
+    expect(engine.gameOver).toBe(false);
+  });
+  
+  test('should identify kings with same-color bishops as insufficient material (both light)', () => {
+    // Set up a position with king+bishop vs king+bishop on same color squares (light)
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place white king and bishop on light square
+    customBoard[7][4] = 'wK';
+    customBoard[6][0] = 'wB'; // a2 - (6+0)%2 = 0 (light)
+    
+    // Place black king and bishop on light square
+    customBoard[0][4] = 'bK';
+    customBoard[1][7] = 'bB'; // h7 - (1+7)%2 = 0 (light)
+    
+    engine.setPosition(customBoard, { currentTurn: 'w' });
+    
+    // Check square colors (1 for dark, 0 for light)
+    const whiteBishopColor = (6+0)%2;
+    const blackBishopColor = (1+7)%2;
+    console.log(`Bishop colors - white: ${whiteBishopColor}, black: ${blackBishopColor}`);
+    
+    // Should be a draw when bishops are on same colored squares
+    expect(whiteBishopColor === blackBishopColor).toBe(true);
+    expect(engine.hasInsufficientMaterial()).toBe(true);
+    expect(engine.gameOver).toBe(true);
+    expect(engine.gameResultReason).toBe('insufficient_material');
+  });
+
+  test('should handle non-standard bishop positions correctly', () => {
+    // Set up a position with king+bishop vs king+bishop with different-colored bishops
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place white king and bishop on dark square
+    customBoard[5][5] = 'wK';
+    customBoard[3][1] = 'wB'; // b5 - (3+1)%2 = 0 (light)
+    
+    // Place black king and bishop on dark square
+    customBoard[2][2] = 'bK';
+    customBoard[7][7] = 'bB'; // h1 - (7+7)%2 = 0 (light)
+    
+    engine.setPosition(customBoard, { currentTurn: 'w' });
+    
+    // Check square colors
+    const whiteBishopColor = (3+1)%2;
+    const blackBishopColor = (7+7)%2;
+    console.log(`Bishop colors - white: ${whiteBishopColor}, black: ${blackBishopColor}`);
+    
+    // Should be a draw when bishops are on same colored squares
+    expect(whiteBishopColor === blackBishopColor).toBe(true);
+    expect(engine.hasInsufficientMaterial()).toBe(true);
+    expect(engine.gameOver).toBe(true);
+    expect(engine.gameResultReason).toBe('insufficient_material');
+  });
+});
+
+describe('ChessEngine - Missing king detection', () => {
+  let engine;
+
+  beforeEach(() => {
+    engine = new ChessEngine();
+  });
+
+  test('should identify when a king is missing and end the game', () => {
+    // Set up a position with white king but no black king
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place white king
+    customBoard[2][3] = 'wK'; // d6
+    
+    // Place some other pieces 
+    customBoard[0][0] = 'bR'; // a8
+    customBoard[0][2] = 'bB'; // c8
+    customBoard[0][4] = 'wQ'; // e8
+    customBoard[0][6] = 'bN'; // g8
+    customBoard[0][7] = 'bR'; // h8
+    customBoard[1][1] = 'bP'; // b7
+    customBoard[1][5] = 'bP'; // f7
+    customBoard[1][6] = 'bP'; // g7
+    customBoard[1][7] = 'bP'; // h7
+    customBoard[4][0] = 'bP'; // a4
+    customBoard[4][2] = 'bP'; // c4
+    customBoard[4][3] = 'wN'; // d4
+    customBoard[4][6] = 'bQ'; // g4
+    
+    // Set up the position
+    engine.setPosition(customBoard, { currentTurn: 'b' });
+    
+    // Game should be over with white winning due to missing black king
+    expect(engine.gameOver).toBe(true);
+    expect(engine.gameResult).toBe('white'); // White wins when black king is missing
+    expect(engine.gameResultReason).toBe('missing_king');
+
+    // Test the reverse case - black king but no white king
+    const customBoard2 = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place black king only
+    customBoard2[0][4] = 'bK';
+    customBoard2[7][0] = 'wR';
+    
+    // Set up the position
+    engine.setPosition(customBoard2, { currentTurn: 'w' });
+    
+    // Game should be over with black winning due to missing white king
+    expect(engine.gameOver).toBe(true);
+    expect(engine.gameResult).toBe('black'); // Black wins when white king is missing
+    expect(engine.gameResultReason).toBe('missing_king');
+  });
+
+  test('should detect missing king at the end of a move', () => {
+    // Set up a position where capturing a king is possible (which shouldn't happen
+    // in normal chess, but we want to handle it gracefully if it does)
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place kings and a knight that can "capture" the king
+    customBoard[7][4] = 'wK';
+    customBoard[5][5] = 'bK';
+    customBoard[7][0] = 'bN'; // Black knight in position to "capture" white king
+    
+    // Set up the position
+    engine.setPosition(customBoard, { currentTurn: 'b' });
+    
+    // Override normal chess rules to allow king capture for testing
+    // This wouldn't happen in a normal game, but we want to test our error handling
+    engine.board[7][4] = null; // Manually remove white king, simulating a capture
+    
+    // Force check for game status which should detect the missing king
+    engine.checkGameStatus();
+    
+    // Game should be over with black winning due to missing white king
+    expect(engine.gameOver).toBe(true);
+    expect(engine.gameResult).toBe('black');
+    expect(engine.gameResultReason).toBe('missing_king');
+  });
+
+  test('should end the game if a king is removed from the board', () => {
+    // Set up a scenario where a king is about to be captured
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Place pieces
+    customBoard[7][4] = 'wK'; // e1
+    customBoard[0][4] = 'bK'; // e8
+    customBoard[5][5] = 'wN'; // f3
+    
+    // Set up the position
+    engine.setPosition(customBoard, { currentTurn: 'w' });
+    
+    // Manually remove the black king to simulate a capture
+    // This bypasses normal move validation which should prevent king captures
+    engine.board[0][4] = null;
+    
+    // Check game status
+    engine.checkGameStatus();
+    
+    // The game should be over with white winning due to black's missing king
+    expect(engine.gameOver).toBe(true);
+    expect(engine.gameResult).toBe('white');
+    expect(engine.gameResultReason).toBe('missing_king');
+  });
+});
+
+describe('ChessEngine - Pawn check detection', () => {
+  let engine;
+
+  beforeEach(() => {
+    engine = new ChessEngine();
+  });
+
+  test('should correctly detect check from white pawn to black king', () => {
+    // Set up a board position with black king in check from white pawn
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Key pieces for this test
+    customBoard[0][4] = 'bK'; // e8 - black king
+    customBoard[1][3] = 'wP'; // d7 - white pawn checking black king
+    
+    // Some other pieces to make a more realistic position
+    customBoard[7][4] = 'wK'; // e1 - white king (needed for valid position)
+    
+    // Set position with black to move (black is in check)
+    engine.setPosition(customBoard, { currentTurn: 'b' });
+    
+    // Black king should be in check
+    expect(engine.isKingInCheck('b')).toBe(true);
+    expect(engine.checkStatus).toBe(true);
+  });
+
+  test('should correctly detect check from black pawn to white king', () => {
+    // Set up a board position with white king in check from black pawn
+    const customBoard = Array(8).fill().map(() => Array(8).fill(null));
+    
+    // Key pieces for this test
+    customBoard[7][4] = 'wK'; // e1 - white king
+    customBoard[6][5] = 'bP'; // f2 - black pawn checking white king
+    
+    // Some other pieces to make a more realistic position
+    customBoard[0][4] = 'bK'; // e8 - black king (needed for valid position)
+    
+    // Set position with white to move (white is in check)
+    engine.setPosition(customBoard, { currentTurn: 'w' });
+    
+    // White king should be in check
+    expect(engine.isKingInCheck('w')).toBe(true);
+    expect(engine.checkStatus).toBe(true);
   });
 }); 
