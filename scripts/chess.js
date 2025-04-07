@@ -48,19 +48,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     config.autoRotateBoard = parsedSettings.autoRotateBoard;
                 }
                 
-                // Update UI toggles with loaded values
-                if (showShareToggle) {
-                    showShareToggle.checked = config.showShareScreenAfterMove;
-                }
-                if (autoRotateToggle) {
-                    autoRotateToggle.checked = config.autoRotateBoard;
-                }
-                
                 console.log('Settings loaded from localStorage:', config);
+            }
+            
+            // Always update UI toggles with current config values, 
+            // whether from localStorage or the default values
+            if (showShareToggle) {
+                showShareToggle.checked = config.showShareScreenAfterMove;
+            }
+            if (autoRotateToggle) {
+                autoRotateToggle.checked = config.autoRotateBoard;
             }
         } catch (error) {
             console.error('Error loading settings from localStorage:', error);
             // Continue with default settings if there was an error
+            
+            // Still update UI toggles with default config values
+            if (showShareToggle) {
+                showShareToggle.checked = config.showShareScreenAfterMove;
+            }
+            if (autoRotateToggle) {
+                autoRotateToggle.checked = config.autoRotateBoard;
+            }
         }
     }
     
