@@ -6,6 +6,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.engine = engine;
     console.log("Chess engine exposed as window.engine:", engine !== undefined);
 
+    // Configuration options
+    const config = {
+        showShareScreenAfterMove: false, // Set to true to show share screen after each move
+    };
+
     // DOM elements
     const chessboard = document.getElementById('chessboard');
     const turnInfo = document.getElementById('turn-info');
@@ -19,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailButton = document.getElementById('email-button');
     const welcomeSection = document.getElementById('welcome-section');
     const startGameButton = document.getElementById('start-game-button');
+    const settingsButton = document.getElementById('settings-button');
+    const settingsPanel = document.getElementById('settings-panel');
+    const showShareToggle = document.getElementById('show-share-toggle');
 
     // UI state
     let selectedSquare = null;
@@ -245,18 +253,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update UI
                 updateGameInfo();
                 
-                // Generate new URL with updated state
+                // Generate new URL with updated state and update browser URL
                 generateShareUrl();
                 
                 // Check if game is over
                 const updatedState = engine.getGameState();
                 if (updatedState.gameOver) {
                     displayGameEndMessage(updatedState);
+                    // Always show share screen on game over
+                    gameSection.classList.add('hidden');
+                    shareSection.classList.remove('hidden');
+                } else if (config.showShareScreenAfterMove) {
+                    // Only show share screen if configured to do so
+                    gameSection.classList.add('hidden');
+                    shareSection.classList.remove('hidden');
                 }
-                
-                // Show share section, hide game section
-                gameSection.classList.add('hidden');
-                shareSection.classList.remove('hidden');
             } else {
                 // If clicking on another square, update selection
                 clearHighlights();
@@ -474,8 +485,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = `${window.location.origin}${window.location.pathname}?s=${encodedState}&c=${checksum}`;
         shareUrl.value = url;
         
+        // Update the browser's URL without reloading the page
+        const urlWithoutOrigin = `${window.location.pathname}?s=${encodedState}&c=${checksum}`;
+        window.history.replaceState({}, document.title, urlWithoutOrigin);
+        
         // Update email button href
         updateEmailButton(url);
+        
+        return url;
     }
     
     // Update email button with current game URL
@@ -663,6 +680,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // Settings button toggle
+    if (settingsButton && settingsPanel) {
+        settingsButton.addEventListener('click', () => {
+            settingsPanel.classList.toggle('hidden');
+        });
+        
+        // Close settings when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!settingsButton.contains(event.target) && !settingsPanel.contains(event.target)) {
+                settingsPanel.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Settings toggle handlers
+    if (showShareToggle) {
+        // Initialize toggle based on config
+        showShareToggle.checked = config.showShareScreenAfterMove;
+        
+        // Handle toggle change
+        showShareToggle.addEventListener('change', () => {
+            config.showShareScreenAfterMove = showShareToggle.checked;
+        });
+    }
+
     // Check if there's a state in the URL
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('s') || urlParams.has('state')) {
