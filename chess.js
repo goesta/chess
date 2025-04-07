@@ -6,9 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.engine = engine;
     console.log("Chess engine exposed as window.engine:", engine !== undefined);
 
-    // Configuration options
+    // Configuration options with default values
     const config = {
         showShareScreenAfterMove: false, // Set to true to show share screen after each move
+        autoRotateBoard: true,           // Set to false to keep the board orientation fixed (white at bottom)
     };
 
     // DOM elements
@@ -27,13 +28,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsButton = document.getElementById('settings-button');
     const settingsPanel = document.getElementById('settings-panel');
     const showShareToggle = document.getElementById('show-share-toggle');
+    const autoRotateToggle = document.getElementById('auto-rotate-toggle');
 
     // UI state
     let selectedSquare = null;
     let possibleMoves = [];
 
+    // Load settings from localStorage
+    function loadSettings() {
+        try {
+            const savedSettings = localStorage.getItem('chesslink-settings');
+            if (savedSettings) {
+                const parsedSettings = JSON.parse(savedSettings);
+                // Update config with saved values, keeping defaults for any missing settings
+                if (typeof parsedSettings.showShareScreenAfterMove === 'boolean') {
+                    config.showShareScreenAfterMove = parsedSettings.showShareScreenAfterMove;
+                }
+                if (typeof parsedSettings.autoRotateBoard === 'boolean') {
+                    config.autoRotateBoard = parsedSettings.autoRotateBoard;
+                }
+                
+                // Update UI toggles with loaded values
+                if (showShareToggle) {
+                    showShareToggle.checked = config.showShareScreenAfterMove;
+                }
+                if (autoRotateToggle) {
+                    autoRotateToggle.checked = config.autoRotateBoard;
+                }
+                
+                console.log('Settings loaded from localStorage:', config);
+            }
+        } catch (error) {
+            console.error('Error loading settings from localStorage:', error);
+            // Continue with default settings if there was an error
+        }
+    }
+    
+    // Save settings to localStorage
+    function saveSettings() {
+        try {
+            localStorage.setItem('chesslink-settings', JSON.stringify(config));
+            console.log('Settings saved to localStorage:', config);
+        } catch (error) {
+            console.error('Error saving settings to localStorage:', error);
+        }
+    }
+
     // Initialize the game
     function initGame(loadFromUrl = false) {
+        // Load user settings first
+        loadSettings();
+        
         // Hide welcome section
         if (welcomeSection) {
             welcomeSection.classList.add('hidden');
@@ -105,8 +150,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Get current game state
         const gameState = engine.getGameState();
         
+        // Determine if board should be rotated
+        // If autoRotateBoard is true, rotate based on currentTurn
+        // If autoRotateBoard is false, always show white at bottom (like standard board)
+        const isRotated = config.autoRotateBoard ? gameState.currentTurn === 'b' : false;
+        
         // Add file labels (adjust based on current turn)
-        const fileOrder = gameState.currentTurn === 'w' ? [...files] : [...files].reverse();
+        const fileOrder = isRotated ? [...files].reverse() : [...files];
         for (let i = 0; i < 8; i++) {
             const fileLabel = document.createElement('div');
             fileLabel.className = 'file-label';
@@ -126,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         boardArea.className = 'board-area';
         
         // Create left rank labels (adjust based on current turn)
-        const rankOrder = gameState.currentTurn === 'w' ? [...ranks] : [...ranks].reverse();
+        const rankOrder = isRotated ? [...ranks].reverse() : [...ranks];
         const leftLabels = document.createElement('div');
         leftLabels.className = 'rank-labels';
         for (let i = 0; i < 8; i++) {
@@ -140,9 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create the actual chessboard
         chessboard.innerHTML = '';
         
-        // Determine the order of rows and columns based on current turn
-        const rowOrder = Array.from({ length: 8 }, (_, i) => gameState.currentTurn === 'w' ? i : 7 - i);
-        const colOrder = Array.from({ length: 8 }, (_, i) => gameState.currentTurn === 'w' ? i : 7 - i);
+        // Determine the order of rows and columns based on board orientation
+        const rowOrder = Array.from({ length: 8 }, (_, i) => isRotated ? 7 - i : i);
+        const colOrder = Array.from({ length: 8 }, (_, i) => isRotated ? 7 - i : i);
         
         // Create squares with pieces
         for (let displayRow = 0; displayRow < 8; displayRow++) {
@@ -696,14 +746,29 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Settings toggle handlers
     if (showShareToggle) {
-        // Initialize toggle based on config
-        showShareToggle.checked = config.showShareScreenAfterMove;
+        // Initialize toggle based on config - moved to loadSettings()
         
         // Handle toggle change
         showShareToggle.addEventListener('change', () => {
             config.showShareScreenAfterMove = showShareToggle.checked;
+            saveSettings(); // Save settings when changed
         });
     }
+    
+    if (autoRotateToggle) {
+        // Initialize toggle based on config - moved to loadSettings()
+        
+        // Handle toggle change
+        autoRotateToggle.addEventListener('change', () => {
+            config.autoRotateBoard = autoRotateToggle.checked;
+            saveSettings(); // Save settings when changed
+            // Immediately redraw the board to apply the change
+            createChessBoard();
+        });
+    }
+
+    // Load settings before checking URL parameters
+    loadSettings();
 
     // Check if there's a state in the URL
     const urlParams = new URLSearchParams(window.location.search);
