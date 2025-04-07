@@ -1,4 +1,4 @@
-const ChessEngine = require('./chess-engine');
+const ChessEngine = require('../scripts/chess-engine');
 
 describe('Pin Detection - Multiple Scenarios', () => {
   let engine;

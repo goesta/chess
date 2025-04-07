@@ -2,9 +2,13 @@
   "name": "chesslink",
   "version": "1.0.0",
   "description": "A serverless chess application with URL state sharing. Play chess with friends by sharing links, no accounts needed.",
-  "main": "chess.js",
+  "main": "scripts/chess.js",
   "scripts": {
     "test": "jest"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"]
   },
   "repository": {
     "type": "git",

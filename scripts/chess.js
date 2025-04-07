@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Configuration options with default values
     const config = {
-        showShareScreenAfterMove: false, // Set to true to show share screen after each move
+        showShareScreenAfterMove: true, // Set to true to show share screen after each move
         autoRotateBoard: true,           // Set to false to keep the board orientation fixed (white at bottom)
     };
 

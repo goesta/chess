@@ -1,4 +1,5 @@
-const ChessEngine = require('./chess-engine');
+// Import the ChessEngine class
+const ChessEngine = require('../scripts/chess-engine');
 
 describe('ChessEngine - Basic functionality', () => {
   let engine;
