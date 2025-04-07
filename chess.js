@@ -483,8 +483,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const emailButton = document.getElementById('email-button');
         if (emailButton) {
             // Create mailto link with pre-filled subject and body
-            const subject = encodeURIComponent("Chess Game - Your Turn");
-            const body = encodeURIComponent(`It's your turn in our chess game!\n\n${url}\n\nClick the link to continue the game.`);
+            const subject = encodeURIComponent("ChessLink - Your Turn");
+            const body = encodeURIComponent(`It's your turn in our ChessLink game!\n\n${url}\n\nClick the link to continue the game.`);
             emailButton.href = `mailto:?subject=${subject}&body=${body}`;
         }
     }
@@ -688,8 +688,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Create email link with pre-filled content
     function createEmailLink() {
-        const subject = encodeURIComponent("Chess Game - Your Turn");
-        const body = encodeURIComponent(`It's your turn in our chess game!\n\n${shareUrl.value}\n\nClick the link to continue the game.`);
+        const subject = encodeURIComponent("ChessLink - Your Turn");
+        const body = encodeURIComponent(`It's your turn in our ChessLink game!\n\n${shareUrl.value}\n\nClick the link to continue the game.`);
         return `mailto:?subject=${subject}&body=${body}`;
     }
 }); 

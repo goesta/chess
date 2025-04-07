@@ -1,7 +1,7 @@
 {
-  "name": "chess",
+  "name": "chesslink",
   "version": "1.0.0",
-  "description": "Another AI experiment. I had the idea of a simple serverless chess game. This is what claude and i came up with.",
+  "description": "A serverless chess application with URL state sharing. Play chess with friends by sharing links, no accounts needed.",
   "main": "chess.js",
   "scripts": {
     "test": "jest"
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/goesta/chess.git"
   },
-  "keywords": [],
+  "keywords": ["chess", "game", "url-sharing", "serverless", "chesslink"],
   "author": "",
   "license": "ISC",
   "bugs": {
