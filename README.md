@@ -1,4 +1,4 @@
-# ChessLink: Chess with URL State Sharing
+# [ChessLink: Chess with URL State Sharing](https://goesta.github.io/chess/)
 Another AI experiment. I had the idea of a simple serverless chess game with URL sharing capabilities. This is what Claude and I came up with.
 
 A web-based chess application that allows two players to play remotely by sharing URLs, without requiring accounts or server infrastructure.
